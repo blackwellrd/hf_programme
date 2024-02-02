@@ -1,0 +1,67 @@
+---
+title: "Heart Failure Programme"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: true
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+
+# Load data files
+# ===============
+
+# Load QOF Prevalence
+df_qof_prev <- read.csv('C:/Data/NHSD/QOF/2023/PREVALENCE_2223.csv') %>% filter(GROUP_CODE %in% c('OB','HF'))
+  
+# Load QOF Achievement
+df_qof_achv <- read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_EAST_OF_ENGLAND_2223.csv') %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_LONDON_2223.csv')) %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_MIDLANDS_2223.csv')) %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_EAST_AND_YORKSHIRE_2223.csv')) %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_WEST_2223.csv')) %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_EAST_2223.csv')) %>%
+  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_WEST_2223.csv')) %>%
+  filter(INDICATOR_CODE == 'SMOK004' & MEASURE %in% c('NUMERATOR','DENOMINATOR','PCAS')) %>%
+  select(PRACTICE_CODE, MEASURE, VALUE)
+  
+df_qof_achv %>% pivot_wider()
+
+# Load QOF Organisational Mapping
+
+MAPPING_NHS_GEOGRAPHIES_2223.csv
+```
+
+### Chart A
+
+***
+
+Commentary
+
+```{r}
+
+```
+
+### Chart B
+
+***
+
+Commentary
+
+```{r}
+
+```
+
+### Chart C
+
+***
+
+Commentary
+
+```{r}
+
+```
+
