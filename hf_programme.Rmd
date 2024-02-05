@@ -10,38 +10,86 @@ output:
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(tidyverse)
+library(leaflet)
+library(sf)
+library(readxl)
 
 # Load data files
 # ===============
 
 # Load QOF Prevalence
-df_qof_prev <- read.csv('C:/Data/NHSD/QOF/2023/PREVALENCE_2223.csv') %>% filter(GROUP_CODE %in% c('OB','HF'))
+df_qof_prev <- read.csv('D:/Data/NHSD/QOF/2023/PREVALENCE_2223.csv') %>% filter(GROUP_CODE %in% c('OB','HF'))
   
 # Load QOF Achievement
-df_qof_achv <- read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_EAST_OF_ENGLAND_2223.csv') %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_LONDON_2223.csv')) %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_MIDLANDS_2223.csv')) %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_EAST_AND_YORKSHIRE_2223.csv')) %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_WEST_2223.csv')) %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_EAST_2223.csv')) %>%
-  bind_rows(read.csv('C:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_WEST_2223.csv')) %>%
+df_qof_achv <- read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_EAST_OF_ENGLAND_2223.csv') %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_LONDON_2223.csv')) %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_MIDLANDS_2223.csv')) %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_EAST_AND_YORKSHIRE_2223.csv')) %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_NORTH_WEST_2223.csv')) %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_EAST_2223.csv')) %>%
+  bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_WEST_2223.csv')) %>%
   filter(INDICATOR_CODE == 'SMOK004' & MEASURE %in% c('NUMERATOR','DENOMINATOR','PCAS')) %>%
   select(PRACTICE_CODE, MEASURE, VALUE)
   
-df_qof_achv %>% pivot_wider()
+df_qof_achv <- df_qof_achv %>% 
+  pivot_wider(names_from = 'MEASURE', values_from = 'VALUE') %>%
+  mutate(DENOMINATOR = DENOMINATOR + PCAS, .keep = 'unused')
 
 # Load QOF Organisational Mapping
+df_org_map <- read.csv('D:/Data/NHSD/QOF/2023/MAPPING_NHS_GEOGRAPHIES_2223.csv')
 
-MAPPING_NHS_GEOGRAPHIES_2223.csv
+# Load GP Registration Data
+df_reg_popn <- read.csv('D:/Data/NHSD/GPREGLSOA/20240101/gp-reg-pat-prac-lsoa-all.csv') %>% 
+  mutate(PRACTICE_CODE, LSOA11CD = LSOA_CODE, REG_POPN = NUMBER_OF_PATIENTS, .keep = 'none')
+
+# Load IMD 2019 Data
+df_imd19 <- read.csv('D:/Data/GOV.UK/IMD/2019/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv') %>% 
+  select(1, 6) %>%
+  rename_with(.fn = ~c('LSOA11CD', 'IMD_SCORE'))
+
+# Load ePCN Data
+df_pcn_members <- read_excel(path = 'D:/Data/NHSD/EPCN/20240129/ePCN.xlsx', sheet = 'PCNDetails') %>%
+  select(1, 2, 3, 6, 12) %>% 
+  rename_with(.fn = ~c('PCN_CODE', 'PCN_NAME', 'SUBICB', 'CLOSE_DATE', 'POSTCODE')) %>%
+  filter(!is.na(CLOSE_DATE))
+
+# Load Postcode Data
+df_pcd <- read.csv('D:/Data/OpenGeography/Lookups/PCD/20231122/ONSPD_NOV_2023_UK.csv') %>% 
+  select(3, 12, 13, 43, 44) %>%
+  rename_with(.fn = ~c('pcds', 'easting', 'northing', 'latitude', 'longitude'))
+
+# Load ICB Shapefile
+sf_icb <- st_read(dsn = 'D:/Data/OpenGeography/Shapefiles/ICB22', layer = 'ICB22') %>%
+  st_transform(crs = 4326)
+
+# Load LSOA 2011 Shapefile
+sf_lsoa11 <- st_read(dsn = 'D:/Data/OpenGeography/Shapefiles/LSOA11', layer = 'LSOA11') %>%
+  st_transform(crs = 4326) %>%
+  filter(grepl('^E', LSOA11CD))
 ```
 
 ### Chart A
 
 ***
 
-Commentary
+Taken from <strong>Network-wide Cardiovascular Disease Portfolio Programme</strong> slides from the <strong>Health Innovation Network</strong>
+<ul>
+  <li>PCN observed baseline population prevalence + % difference to attain expected population prevalence of 1.6%</li>
+  <ul>
+    <li>Current population prevalence = 1.03% [QOF 22/23 data]</li>
+    <li>Expected population prevalence = 1.6% - 2.0%</li>
+  </ul>
+</ul>
+<p>References:</p>
+<ul>
+  <li>
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10373419/</li>
+  <li>https://heart.bmj.com/content/109/7/548]</li>
+</ul>
+<p>Measurement: annual data capture from QOF</p>
 
 ```{r}
+
 
 ```
 
