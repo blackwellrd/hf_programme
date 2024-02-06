@@ -19,9 +19,7 @@ df_qof_achv <- read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_EAST_OF_ENGLAND_2223.
   bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_EAST_2223.csv')) %>%
   bind_rows(read.csv('D:/Data/NHSD/QOF/2023/ACHIEVEMENT_SOUTH_WEST_2223.csv')) %>%
   filter(INDICATOR_CODE == 'SMOK004' & MEASURE %in% c('NUMERATOR','DENOMINATOR','PCAS')) %>%
-  select(PRACTICE_CODE, MEASURE, VALUE)
-
-df_qof_achv <- df_qof_achv %>% 
+  select(PRACTICE_CODE, MEASURE, VALUE) %>% 
   pivot_wider(names_from = 'MEASURE', values_from = 'VALUE') %>%
   mutate(DENOMINATOR = DENOMINATOR + PCAS, .keep = 'unused')
 
@@ -72,7 +70,6 @@ df_map_data <- df_qof_prev %>%
 
 palPrevalence <- colorNumeric(palette = 'viridis', domain = pretty(df_map_data$PREVALENCE, n = 10))
 palDistanceToTarget <- colorNumeric(palette = 'RdYlGn', domain = pretty(df_map_data$DISTANCE_TO_TARGET, n = 10), reverse = TRUE)
-colorRampPalette
 
 # Map 1: Prevalence of HF by ICB
 
@@ -122,3 +119,12 @@ df_qof_prev %>%
 
 
   
+
+install.packages('colorRamps')
+library(colorRamps)
+rgb.tables(n, 
+           red = c(0.75, 0.25, 1), 
+           green = c(0.5, 0.25, 1), 
+           blue = c(0.25, 0.25, 1))
+
+pretty(df_map_data$DISTANCE_TO_TARGET, n = 10)
