@@ -3,6 +3,7 @@ library(tidyverse)
 library(leaflet)
 library(sf)
 library(readxl)
+library(plotly)
 
 # Load data files
 # ===============
@@ -69,10 +70,9 @@ df_map_data <- df_qof_prev %>%
   
 
 palPrevalence <- colorNumeric(palette = 'viridis', domain = pretty(df_map_data$PREVALENCE, n = 10))
-palDistanceToTarget <- colorNumeric(palette = 'RdYlGn', domain = pretty(df_map_data$DISTANCE_TO_TARGET, n = 10), reverse = TRUE)
+palDistanceToTarget <- colorNumeric(palette = 'viridis', domain = pretty(df_map_data$DISTANCE_TO_TARGET, n = 10))
 
 # Map 1: Prevalence of HF by ICB
-
 map01 <- leaflet() %>%
   addTiles() %>%
   addPolygons(data = sf_icb %>% 
@@ -106,16 +106,71 @@ map01 <- leaflet() %>%
 map01
 
 
-df_qof_prev %>% 
+# Chart 1: Bar Chart of Prevalence of HF by Practice
+df_plot_data <- df_qof_prev %>% 
   filter(GROUP_CODE =='HF') %>%
   left_join(df_org_map, by = 'PRACTICE_CODE') %>%
-  select(ICB_ODS_CODE, ICB_ONS_CODE, ICB_NAME, REGISTER, PRACTICE_LIST_SIZE) %>%
-  group_by(ICB_ODS_CODE, ICB_ONS_CODE, ICB_NAME) %>%
-  summarise(REGISTER = sum(REGISTER),
-            PRACTICE_LIST_SIZE = sum(PRACTICE_LIST_SIZE),
-            .groups = 'keep') %>%
-  ungroup() %>%
-  mutate(PREVALENCE = REGISTER / PRACTICE_LIST_SIZE)
+  mutate(PREVALENCE = REGISTER / PRACTICE_LIST_SIZE * 100,
+         DISTANCE_TO_TARGET = 1.6 - PREVALENCE,
+         RANK_PREVALENCE = rank(-PREVALENCE, ties.method = 'random'),
+         RANK_DISTANCE_TO_TARGET = rank(-DISTANCE_TO_TARGET, ties.method = 'random'),
+         )
+
+hisw_ibc <- c('E54000036' = 'Cornwall and IoS',
+              'E54000037' = 'Devon',
+              'E54000038' = 'Somerset')
+
+region_list <- c('HISW' = 'HISW',
+                 'E40000003' = 'London',
+                 'E40000005' = 'South East',
+                 'E40000006' = 'South West',
+                 'E40000007' = 'East of England',
+                 'E40000010' = 'North West',
+                 'E40000011' = 'Midlands',
+                 'E40000012' = 'North East and Yorkshire')
+
+palette_icb <- c('HISW' = '#C00000FF',
+                 # '''''''''''''''''''
+                 'E54000036' = '#1b9e77',
+                 'E54000037' = '#7570b3',
+                 'E54000038' = '#d95f02',
+                 # ''''''''''''''''''''''
+                 'E40000003' = '#8DD3C7C0',
+                 'E40000006' = '#FB8072C0',
+                 'E40000005' = '#BEBADAC0',
+                 'E40000011' = '#80B1D3C0',
+                 'E40000007' = '#FDB462C0',
+                 'E40000010' = '#B3DE69C0',
+                 'E40000012' = '#FCCDE5C0')
+
+# Create blank plotly plot
+plt_prevalence <- plot_ly()
+
+# Iterate through regions adding each as a separate trace to the plotly plot
+for(r in names(region_list)){
+  plt_prevalence <- plt_prevalence %>% 
+    add_trace(data = df_plot_data %>% filter(REGION_ONS_CODE == r),
+              type = 'bar',
+              x = ~RANK_PREVALENCE,
+              y = ~PREVALENCE,
+              color = unname(region_list[r]),
+              colors = unname(palette_icb[r]),
+              hovertext = ~PRACTICE_NAME,
+              hoverinfo = 'text',
+              marker = list(color = palette_icb[r]))
+}
+
+plt_prevalence
+
+df_plot_data %>% filter(REGION_NAME == r)
+
+plt <- plotly() %>%
+  add_trace(data = df_plot_data,
+            x = RANK_PREVALENCE,
+            y = PREVALENCE)
+plt
+  
+  
 
 
   
